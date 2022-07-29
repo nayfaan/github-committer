@@ -75,12 +75,13 @@ def setupGit():
         sys('git remote add origin "' + remoteOrigin() + '"')
         sys("git push origin -u main")
         
-def push2Github(commitDetails):
+def push2Github(commitDetails, __URL):
     sys("git add .")
     sys('git commit -am "' + commitDetails[0] + ' ' + commitDetails[1] + '"')
-    sys("git push origin -u main")
+    if __URL:
+        sys("git push origin -u main")
         
-def newCommit(versionNo, versionAuto):
+def newCommit(versionNo, versionAuto, __URL):
     commitDetails = []
     w = tk.Tk()
     w.title("New Commit")
@@ -119,19 +120,28 @@ def newCommit(versionNo, versionAuto):
                              command = versionUpdate).pack()
     
     w.mainloop()
-    push2Github(commitDetails)
+    push2Github(commitDetails, __URL)
     
 if __name__ == "__main__":
     sys("cd " + ABSPTH)
     if not gitExist():
         setupGit()
-    __URL = subprocess.check_output('git config --get remote.origin.url', shell=True, text=True)
-    __lastMessage = subprocess.check_output('git log -1 --pretty=%B', shell=True, text=True)
-    versionNo = re.findall("^[^\s]+", __lastMessage)[0]
     
-    versionNoMinor = int(re.findall("(\d+)\.$", versionNo)[0])
-    versionAuto = re.sub("\d+(?=\.$)", str(versionNoMinor + 1), versionNo)
-    versionAuto = re.sub("\.$", "", versionAuto)
-    versionAuto = re.sub("^v\.", "", versionAuto)
+    try:
+        __URL = subprocess.check_output('git config --get remote.origin.url', shell=True, text=True)
+    except:
+        __URL = None
+        
+    try:
+        __lastMessage = subprocess.check_output('git log -1 --pretty=%B', shell=True, text=True)
+        versionNo = re.findall("^[^\s]+", __lastMessage)[0]
+        
+        versionNoMinor = int(re.findall("(\d+)\.$", versionNo)[0])
+        versionAuto = re.sub("\d+(?=\.$)", str(versionNoMinor + 1), versionNo)
+        versionAuto = re.sub("\.$", "", versionAuto)
+        versionAuto = re.sub("^v\.", "", versionAuto)
+    except:
+        versionNo = "N/A"
+        versionAuto = "0.0"
     
-    newCommit(versionNo, versionAuto)
+    newCommit(versionNo, versionAuto, __URL)
