@@ -1,12 +1,10 @@
-import os
+import os, subprocess
 from pathlib import Path
 from os import system as sys
 import tkinter as tk
+import re
 
 ABSPTH = os.path.abspath("")
-
-def run():
-    pass
 
 def gitExist():
     git_dir = Path(".git")
@@ -20,7 +18,7 @@ def remoteOrigin():
     
     w = tk.Tk()
     tk.Label(w,
-             text="Is there a remote origin?").pack()
+             text = "Is there a remote origin?").pack()
     
     remoteOriginOptions = [("Yes",True),("No",False)]
     
@@ -68,7 +66,6 @@ def remoteOrigin():
     return(RemoteOriginUrl[0])
 
 def setupGit():
-    sys("cd " + ABSPTH)
     sys("git init")
     sys("git add .")
     sys('git commit -am "init"')
@@ -77,9 +74,64 @@ def setupGit():
     if remoteOrigin():
         sys('git remote add origin "' + remoteOrigin() + '"')
         sys("git push origin -u main")
+        
+def push2Github(commitDetails):
+    sys("git add .")
+    sys('git commit -am "' + commitDetails[0] + ' ' + commitDetails[1] + '"')
+    sys("git push origin -u main")
+        
+def newCommit(versionNo, versionAuto):
+    commitDetails = []
+    w = tk.Tk()
+    w.title("New Commit")
+    
+    currentVer = tk.Label(w,
+                          text = "Current version #: " + versionNo).pack()
+    
+    versionNoFrame = tk.Frame()
+    
+    versionVar = tk.StringVar(w, value = versionAuto)
+    
+    versionNoLabel = tk.Label(master = versionNoFrame,
+                              text = "Update version #: v.").grid(column=0, row=0)
+    versionNoEntry = tk.Entry(master = versionNoFrame,
+                              width = 3,
+                              textvariable = versionVar).grid(column=1, row=0)
+    versionNoLabelDot = tk.Label(master = versionNoFrame,
+                              text = ".").grid(column=2, row=0)
+    versionNoFrame.pack()
+    
+    commentLabel = tk.Label(w,
+                            text = "Comment:",
+                            anchor = "w").pack(fill='x')
+    
+    commentEntry = tk.Text(width = 35, height = 5)
+    commentEntry.pack()
+    
+    def versionUpdate():
+        if commentEntry.get("1.0", "end-1c"):
+            commitDetails.append("v."+versionVar.get()+".")
+            commitDetails.append(commentEntry.get("1.0", "end-1c"))
+            w.destroy()
+    
+    submitButton = tk.Button(w,
+                             text="Submit",
+                             command = versionUpdate).pack()
+    
+    w.mainloop()
+    push2Github(commitDetails)
     
 if __name__ == "__main__":
+    sys("cd " + ABSPTH)
     if not gitExist():
         setupGit()
+    __URL = subprocess.check_output('git config --get remote.origin.url', shell=True, text=True)
+    __lastMessage = subprocess.check_output('git log -1 --pretty=%B', shell=True, text=True)
+    versionNo = re.findall("^[^\s]+", __lastMessage)[0]
     
-    run()
+    versionNoMinor = int(re.findall("(\d+)\.$", versionNo)[0])
+    versionAuto = re.sub("\d+(?=\.$)", str(versionNoMinor + 1), versionNo)
+    versionAuto = re.sub("\.$", "", versionAuto)
+    versionAuto = re.sub("^v\.", "", versionAuto)
+    
+    newCommit(versionNo, versionAuto)
