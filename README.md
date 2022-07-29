@@ -1,0 +1,1 @@
+This script simplifies the committing process to github with a UI.
