@@ -107,6 +107,7 @@ def newCommit(versionNo, versionAuto, __URL):
                             anchor = "w").pack(fill='x')
     
     commentEntry = tk.Text(width = 35, height = 5)
+    commentEntry.insert(tk.END, "- ")
     commentEntry.pack()
     
     def versionUpdate():
